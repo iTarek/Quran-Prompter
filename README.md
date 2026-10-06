@@ -1,3 +1,4 @@
+
 <p align="center">
   <a href="https://islamicaich.org">
     <picture>
@@ -29,6 +30,8 @@
   <img alt="TypeScript" src="https://img.shields.io/badge/TypeScript-5.9-3178C6?style=for-the-badge&logo=typescript&logoColor=white">
   <a href="LICENSE"><img alt="License: Quran-Lab NPL-1.2" src="https://img.shields.io/badge/License-Quran--Lab%20NPL--1.2-2C3775?style=for-the-badge"></a>
 </p>
+
+https://github.com/user-attachments/assets/f72caca1-bfb1-4c1b-a5cc-370fc31e8208
 
 Start reciting from anywhere in the Quran. The prompter finds your place,
 follows you word by word, colours every word you recite, and scrolls the ayahs
