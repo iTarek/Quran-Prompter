@@ -13,6 +13,8 @@
 
 <p align="center"><b>Quran Prompter</b> — it listens to your recitation and scrolls with you</p>
 
+<p align="center">Project by <a href="https://x.com/itarek"><b>Tarek Mansour</b></a> · <a href="https://x.com/itarek">@itarek</a></p>
+
 <p align="center">
   <a href="https://prompter.alketab.app"><img alt="Live demo: prompter.alketab.app" src="https://img.shields.io/badge/Live%20demo-prompter.alketab.app-2fbf71?style=for-the-badge&logo=googlechrome&logoColor=white"></a>
   <a href="https://youtu.be/nyBEyUz9sbM"><img alt="Demo video on YouTube" src="https://img.shields.io/badge/Demo%20video-YouTube-FF0000?style=for-the-badge&logo=youtube&logoColor=white"></a>
@@ -133,5 +135,3 @@ anything the model powers.
 | the interface font, Readex Pro | The Readex Pro Project Authors | SIL OFL 1.1 |
 | onnxruntime-web | Microsoft | MIT |
 | word recitation audio, played on tap | Quran.com (`audio.qurancdn.com`) | streamed, not redistributed |
-
-Written with **Claude Code** (Anthropic) as an AI pair programmer.
