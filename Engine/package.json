@@ -1,0 +1,43 @@
+{
+  "name": "@alketab/quran-engine",
+  "version": "0.2.0",
+  "description": "Quran recitation engine: whole-Quran locate + streaming word tracker, plus the browser model runner (fbank + onnxruntime-web + greedy CTC) and mic capture.",
+  "license": "SEE LICENSE IN LICENSE",
+  "type": "module",
+  "files": [
+    "dist",
+    "data"
+  ],
+  "exports": {
+    ".": {
+      "types": "./dist/core/index.d.ts",
+      "default": "./dist/core/index.js"
+    },
+    "./browser": {
+      "types": "./dist/browser/index.d.ts",
+      "default": "./dist/browser/index.js"
+    },
+    "./data/quran.json": "./data/quran.json",
+    "./data/translit.json": "./data/translit.json",
+    "./data/translations/*": "./data/translations/*"
+  },
+  "scripts": {
+    "build": "tsc -b",
+    "watch": "tsc -b --watch",
+    "test": "vitest run",
+    "translations": "node scripts/fetch-translations.mjs"
+  },
+  "peerDependencies": {
+    "onnxruntime-web": "^1.29.0"
+  },
+  "peerDependenciesMeta": {
+    "onnxruntime-web": {
+      "optional": true
+    }
+  },
+  "devDependencies": {
+    "onnxruntime-web": "^1.29.0",
+    "typescript": "^5.9.3",
+    "vitest": "^5.0.0"
+  }
+}

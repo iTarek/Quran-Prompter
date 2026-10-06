@@ -1,0 +1,13 @@
+{
+  "name": "alketab-web",
+  "private": true,
+  "workspaces": [
+    "Engine",
+    "QuranPrompter"
+  ],
+  "scripts": {
+    "build": "npm run build -w Engine && npm run build -w QuranPrompter",
+    "test": "npm test -w Engine && npm test -w QuranPrompter",
+    "dev": "npm run dev -w QuranPrompter"
+  }
+}

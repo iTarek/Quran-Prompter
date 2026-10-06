@@ -1,0 +1,10 @@
+node_modules/
+dist/
+# the 72 MB model — `npm run fetch-model -w QuranPrompter`, see README "Quick start"
+QuranPrompter/public/models/
+# copied from Engine/data at dev/build time
+QuranPrompter/public/data/
+.DS_Store
+*.tsbuildinfo
+# recordings for ?audio= — see README "Quick start"
+QuranPrompter/public/test/

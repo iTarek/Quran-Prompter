@@ -1,0 +1,2429 @@
+/*
+ * ملقّن القرآن — the redesign.
+ *
+ * One ground colour, one UI face (Readex Pro), one palette of three stops that
+ * everything that GLOWS is drawn in: the orb, the tab under the chosen mode,
+ * the words the reciter has said. The palette and the ground are written onto
+ * :root by `theme.ts`; every tint below is derived from them with color-mix,
+ * so a new palette is three hex values and nothing else.
+ */
+
+/* ---- faces ------------------------------------------------------------- */
+@font-face {
+  /* The mushaf face. Its text is PRECOMPOSED private-use glyphs — 2,737 of
+     them and not one standard Arabic letter — so it can only ever draw what
+     the corpus hands it, and it draws that identically in every browser. */
+  font-family: "KFGQPC Hafs Smart";
+  src: url("/fonts/HafsSmart_08.ttf") format("truetype");
+  font-display: block;
+}
+/* Readex Pro, self-hosted: the app works offline, and a face fetched from
+   Google on each visit would not. One variable file per script, 160–700. */
+@font-face {
+  font-family: "Readex Pro";
+  src: url("/fonts/ReadexPro-arabic.woff2") format("woff2");
+  font-weight: 160 700;
+  font-display: swap;
+  unicode-range: U+0600-06FF, U+0750-077F, U+0870-088E, U+0890-0891, U+0897-08E1, U+08E3-08FF, U+200C-200E, U+2010-2011,
+    U+204F, U+2E41, U+FB50-FDFF, U+FE70-FE74, U+FE76-FEFC;
+}
+@font-face {
+  font-family: "Readex Pro";
+  src: url("/fonts/ReadexPro-latin-ext.woff2") format("woff2");
+  font-weight: 160 700;
+  font-display: swap;
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF,
+    U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+@font-face {
+  font-family: "Readex Pro";
+  src: url("/fonts/ReadexPro-latin.woff2") format("woff2");
+  font-weight: 160 700;
+  font-display: swap;
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F,
+    U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+
+/* ---- tokens ------------------------------------------------------------ */
+:root {
+  color-scheme: dark;
+  /* Written by theme.ts; these are only what shows before it runs. */
+  --c0: #a8e063;
+  --c1: #2fbf71;
+  --c2: #f2c14e;
+  --bg: #000;
+  --grad: linear-gradient(90deg, var(--c0), var(--c1), var(--c2));
+  --glow: color-mix(in srgb, var(--c1) 50%, transparent);
+  --glow-soft: color-mix(in srgb, var(--c1) 28%, transparent);
+  --ink: #f4f1ea;
+  --ink-85: rgba(244, 241, 234, 0.85);
+  --ink-80: rgba(244, 241, 234, 0.8);
+  --ink-74: rgba(244, 241, 234, 0.74);
+  --ink-72: rgba(244, 241, 234, 0.72);
+  --ink-65: rgba(244, 241, 234, 0.65);
+  --ink-60: rgba(244, 241, 234, 0.6);
+  --ink-55: rgba(244, 241, 234, 0.55);
+  --line: rgba(255, 255, 255, 0.14);
+  --line-soft: rgba(255, 255, 255, 0.08);
+  --sheet: #0d0e13;
+  /* The verdicts that are WARNINGS keep their colour in every palette: red
+     has to mean wrong whatever the reciter picked. Only "recited" and "now"
+     follow the palette. The legend in the About page reads these same three,
+     so it cannot drift from the page. */
+  --v-pending: #9459d4;
+  --v-skipped: #8f949c;
+  --v-wrong: #d62e2e;
+  --ease-out: cubic-bezier(0.2, 0.7, 0.2, 1);
+  --ui: "Readex Pro", system-ui, -apple-system, "Segoe UI", sans-serif;
+  /* Only this face can draw the mushaf encoding; there is no fallback, because
+     a fallback would render private-use codepoints as tofu. */
+  --quran: "KFGQPC Hafs Smart";
+  /* THE MUSHAF SIZE SCALES WITH THE SCREEN, not with a fixed pixel base. The
+     floor (44px) is the iOS app's own base; from there it grows with the
+     viewport, and the height term keeps a wide but short window from showing
+     two enormous lines. The reciter's multiplier — slider or pinch, 0.8…2.2 —
+     multiplies whatever this lands on. */
+  --base-font: clamp(44px, min(10.5vw, 9vh), 88px);
+  --font-multi: 1.2;
+  --font-size: calc(var(--base-font) * var(--font-multi));
+  --scale: calc(var(--font-size) / 44px);
+  /* The Latin reading's share of its word's size. The ONLY place it is
+     written: `fitTranslit` sets `--tr-fit` on a reading it has to shrink, and
+     never needs to know what it is shrinking from. */
+  --tr-size: 0.4;
+  --safe-top: env(safe-area-inset-top, 0px);
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
+}
+@supports (height: 100dvh) {
+  :root {
+    --base-font: clamp(44px, min(10.5vw, 9dvh), 88px);
+  }
+}
+
+* {
+  box-sizing: border-box;
+}
+html,
+body {
+  margin: 0;
+  height: 100%;
+  background: var(--bg);
+  color: var(--ink);
+  font-family: var(--ui);
+  -webkit-font-smoothing: antialiased;
+  -webkit-text-size-adjust: 100%;
+  overscroll-behavior: none;
+  transition: background 0.6s ease;
+}
+button,
+input {
+  font: inherit;
+  color: inherit;
+}
+button {
+  -webkit-tap-highlight-color: transparent;
+}
+a {
+  color: #cfe9ff;
+  text-decoration: none;
+}
+a:hover {
+  color: #fff;
+}
+svg {
+  display: block;
+}
+/* No double-tap zoom anywhere — the page never zooms (src/zoom.ts). Panning
+   and the reading page's own pinch-to-resize are untouched. */
+html {
+  touch-action: manipulation;
+}
+[hidden] {
+  display: none !important;
+}
+
+/* The pre-boot copy for crawlers and no-JS visitors — removed the moment the
+   app starts, and hidden from first paint by index.html until then. */
+#seo {
+  max-width: 40em;
+  margin: 0 auto;
+  padding: 40px 24px;
+  line-height: 1.7;
+  color: var(--ink-72);
+}
+#seo h1 {
+  font-size: 28px;
+  color: var(--ink);
+}
+#seo h2 {
+  font-size: 19px;
+  color: var(--ink);
+  margin-top: 28px;
+}
+#seo a {
+  color: var(--c0);
+}
+
+#app {
+  position: fixed;
+  inset: 0;
+  overflow: hidden;
+  background: var(--bg);
+  transition: background 0.6s ease;
+}
+
+@keyframes qpUp {
+  from {
+    opacity: 0;
+    transform: translateY(18px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+@keyframes qpFade {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+@keyframes qpSheet {
+  from {
+    opacity: 0;
+    transform: translateY(40px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+@keyframes qpPop {
+  0% {
+    opacity: 0;
+    transform: scale(0.86);
+    filter: blur(10px);
+  }
+  100% {
+    opacity: 1;
+    transform: none;
+    filter: blur(0);
+  }
+}
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* ---- shared pieces ----------------------------------------------------- */
+/* A round, outlined icon button — the header's, the reader's, the sheets'. */
+.roundbtn {
+  flex: none;
+  width: 40px;
+  height: 40px;
+  padding: 0;
+  border-radius: 50%;
+  border: 1px solid var(--line);
+  background: transparent;
+  cursor: pointer;
+  display: grid;
+  place-items: center;
+  transition: border-color 0.3s;
+}
+.roundbtn:hover {
+  border-color: rgba(255, 255, 255, 0.4);
+}
+.roundbtn svg {
+  width: 18px;
+  height: 18px;
+}
+.roundbtn.lg {
+  width: 44px;
+  height: 44px;
+}
+/* The close cross is drawn heavier (1.8) and so a size smaller, as designed. */
+.roundbtn.x svg {
+  width: 16px;
+  height: 16px;
+}
+/* The palette gradient, painted INTO the letters. */
+.gradtext {
+  background-image: var(--grad);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  color: transparent;
+  display: inline-block;
+}
+/* The one filled button: the palette gradient, dark text. */
+.cta {
+  border: 0;
+  cursor: pointer;
+  padding: 15px 26px;
+  border-radius: 999px;
+  background: var(--grad);
+  color: #05060a;
+  font-weight: 600;
+  font-size: 15px;
+  box-shadow: 0 10px 40px var(--glow-soft);
+  transition: transform 0.3s;
+}
+.cta:hover {
+  transform: translateY(-2px);
+}
+.cta:active {
+  transform: scale(0.97);
+}
+/* Picking up where you stopped: a quiet pill with the bookmark in it. */
+.resume {
+  cursor: pointer;
+  padding: 11px 20px;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  background: rgba(255, 255, 255, 0.04);
+  font-size: 14px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  transition:
+    opacity 0.4s,
+    transform 0.5s var(--ease-out),
+    border-color 0.3s,
+    background 0.3s;
+}
+.resume:hover {
+  border-color: rgba(255, 255, 255, 0.4);
+  background: rgba(255, 255, 255, 0.08);
+}
+.resume svg {
+  width: 16px;
+  height: 16px;
+  flex: none;
+}
+/* A third way in, and deliberately not a third button. */
+.choose {
+  border: 0;
+  background: transparent;
+  cursor: pointer;
+  padding: 4px 8px;
+  font-size: 14px;
+  color: var(--c0);
+  text-decoration: underline;
+  text-underline-offset: 5px;
+  text-decoration-color: var(--glow);
+  transition: opacity 0.4s;
+}
+/* Offered or not: an unoffered pill fades and sinks rather than vanishing, so
+   the column never jumps when the mode changes under it. */
+.offer-off {
+  opacity: 0;
+  pointer-events: none;
+}
+.resume.offer-off {
+  transform: translateY(6px) scale(0.96);
+}
+/* A pill-shaped ع / EN switch, in the header and in the settings sheet. */
+.langpill {
+  display: flex;
+  padding: 3px;
+  border-radius: 999px;
+  border: 1px solid var(--line);
+  gap: 2px;
+}
+.langpill button {
+  border: 0;
+  cursor: pointer;
+  padding: 6px 11px;
+  border-radius: 999px;
+  font-size: 13px;
+  line-height: 1.2;
+  background: transparent;
+  color: var(--ink);
+  transition:
+    background 0.3s,
+    color 0.3s;
+}
+.langpill button[aria-pressed="true"] {
+  background: var(--ink);
+  color: #05060a;
+}
+.langpill.wide button {
+  padding: 7px 16px;
+}
+/* «ع» is one letter with no ascender, and Readex Pro draws it low: centred
+   by the line box, its ink sat 4.5 px under «EN»'s. Same button height, the
+   text moved up by the difference. */
+.langpill:not(.wide) button:lang(ar) {
+  padding-block: 1.5px 10.5px;
+}
+.spinner {
+  width: 32px;
+  height: 32px;
+  border: 2.5px solid rgba(255, 255, 255, 0.12);
+  border-top-color: var(--c1);
+  border-radius: 50%;
+  animation: spin 0.9s linear infinite;
+}
+
+/* ---- header (start screen) --------------------------------------------- */
+.hdr {
+  position: fixed;
+  top: 0;
+  inset-inline: 0;
+  z-index: 20;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: calc(16px + var(--safe-top)) clamp(16px, 4vw, 40px) 16px;
+}
+.hdr .brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+}
+.hdr .brand img {
+  width: 38px;
+  height: 38px;
+  border-radius: 10px;
+  flex: none;
+  box-shadow:
+    0 0 0 1px rgba(255, 255, 255, 0.1),
+    0 6px 24px rgba(0, 0, 0, 0.6);
+}
+.hdr .brand span {
+  font-weight: 500;
+  font-size: 16px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.hdr .tools {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+/* On a phone the English name, the language pill and two buttons come to
+   ~8 px more than the width: the spacing gives before the name does. Narrower
+   still, the name ends in an ellipsis rather than pushing the buttons off. */
+@media (max-width: 400px) {
+  .hdr {
+    gap: 8px;
+    padding-inline: 14px;
+  }
+  .hdr .tools {
+    gap: 6px;
+  }
+  .hdr .brand {
+    gap: 8px;
+  }
+}
+
+/* ---- start screen ------------------------------------------------------ */
+.home {
+  position: absolute;
+  inset: 0;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: safe center;
+  gap: clamp(6px, 1.6vh, 16px);
+  padding: calc(80px + var(--safe-top)) 20px calc(104px + var(--safe-bottom));
+  /* The orb's size, shared with the offers below it — see `.offers`. */
+  --orb-size: max(180px, min(88vw, 500px, calc(100svh - 360px)));
+  text-align: center;
+  overflow-y: auto;
+  scrollbar-width: none;
+}
+.home::-webkit-scrollbar {
+  display: none;
+}
+.modeinfo {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  max-width: 460px;
+  flex: none;
+}
+.modeinfo .name {
+  font-size: clamp(20px, 2.6vw, 24px);
+  font-weight: 500;
+}
+.modeinfo p {
+  margin: 0;
+  font-weight: 300;
+  font-size: clamp(15px, 1.8vw, 18px);
+  line-height: 1.7;
+  min-height: 5.1em;
+  color: var(--ink-74);
+  text-wrap: pretty;
+}
+.orbwrap {
+  position: relative;
+  width: var(--orb-size);
+  aspect-ratio: 1;
+  flex: none;
+  animation: qpFade 1.6s 0.1s ease both;
+}
+.orbwrap canvas {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+.startorb {
+  position: absolute;
+  inset: 0;
+  margin: auto;
+  width: 118px;
+  height: 118px;
+  border-radius: 50%;
+  cursor: pointer;
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  background: rgba(0, 0, 0, 0.35);
+  -webkit-backdrop-filter: blur(8px);
+  backdrop-filter: blur(8px);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  transition:
+    transform 0.35s var(--ease-out),
+    border-color 0.35s;
+}
+.startorb:hover {
+  transform: scale(1.07);
+  border-color: rgba(255, 255, 255, 0.6);
+}
+.startorb:active {
+  transform: scale(0.97);
+}
+.startorb svg {
+  width: 22px;
+  height: 22px;
+}
+.startorb span {
+  font-size: 14px;
+  font-weight: 500;
+  max-width: 96px;
+  line-height: 1.3;
+}
+.offers {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  flex: none;
+  min-height: 86px;
+  /* Up into the orb's empty margin: its rings reach 37 % of the canvas from
+     the centre, so the canvas's bottom 13 % is only glow. Lifted by 10 % of
+     the orb, and by a transform, which moves nothing else — the orb stays
+     exactly where it was. On an iPhone with Safari's bar showing, «اختر
+     السورة» sat under the mode tab bar. */
+  transform: translateY(calc(var(--orb-size) * -0.1));
+}
+
+/* ---- mode tab bar ------------------------------------------------------ */
+.tabsnav {
+  position: fixed;
+  bottom: 0;
+  inset-inline: 0;
+  z-index: 20;
+  display: flex;
+  justify-content: center;
+  padding: 0 12px max(14px, var(--safe-bottom));
+}
+.tabs {
+  position: relative;
+  width: 100%;
+  max-width: 520px;
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  padding: 5px;
+  border-radius: 24px;
+  background: rgba(20, 21, 27, 0.72);
+  border: 1px solid var(--line-soft);
+  -webkit-backdrop-filter: blur(18px);
+  backdrop-filter: blur(18px);
+}
+/* The lit plate under the chosen mode. It SLIDES to the next one — with a
+   little overshoot — rather than the old plate simply changing tab. */
+.tabs .plate {
+  position: absolute;
+  top: 5px;
+  bottom: 5px;
+  inset-inline-start: calc(5px + var(--i, 0) * (100% - 10px) / 4);
+  width: calc((100% - 10px) / 4);
+  border-radius: 19px;
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--c1) 22%, transparent),
+    color-mix(in srgb, var(--c2) 10%, transparent)
+  );
+  box-shadow:
+    inset 0 0 0 1px color-mix(in srgb, var(--c1) 85%, transparent),
+    inset 0 0 18px var(--glow-soft),
+    0 0 22px var(--glow),
+    0 0 56px var(--glow-soft);
+  transition: inset-inline-start 0.55s cubic-bezier(0.3, 1.3, 0.4, 1);
+}
+.tab {
+  position: relative;
+  border: 0;
+  background: transparent;
+  cursor: pointer;
+  padding: 9px 2px 8px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  color: var(--ink-55);
+  transition: color 0.4s;
+}
+.tab .ic {
+  display: grid;
+  place-items: center;
+  height: 22px;
+  transition:
+    color 0.4s,
+    transform 0.4s,
+    filter 0.4s;
+}
+.tab .ic svg {
+  width: 21px;
+  height: 21px;
+}
+.tab .lb {
+  font-size: 11.5px;
+  line-height: 1.25;
+  font-weight: 500;
+  transition: text-shadow 0.4s;
+}
+.tab[aria-checked="true"] {
+  color: #fff;
+}
+.tab[aria-checked="true"] .ic {
+  color: var(--c0);
+  transform: translateY(-1px) scale(1.1);
+  filter: drop-shadow(0 0 6px color-mix(in srgb, var(--c0) 90%, transparent))
+    drop-shadow(0 0 14px color-mix(in srgb, var(--c1) 70%, transparent));
+}
+.tab[aria-checked="true"] .lb {
+  text-shadow: 0 0 12px color-mix(in srgb, var(--c1) 80%, transparent);
+}
+
+/* ---- full-screen layers ------------------------------------------------ */
+/*
+ * A full-screen layer over the start screen. Hidden by VISIBILITY, never by
+ * `display: none`: a surah is mounted while the reader is still hidden (the
+ * engine reports the place a moment before it switches to reading), and the
+ * Latin readings are fitted and the line is parked by MEASURING the page. With
+ * no layout there is nothing to measure — every reading would stay unfitted.
+ */
+.layer {
+  position: fixed;
+  inset: 0;
+  z-index: 30;
+  background: var(--bg);
+  opacity: 1;
+  visibility: visible;
+  transition:
+    opacity 0.5s ease,
+    visibility 0s linear 0s,
+    background 0.6s ease;
+}
+.layer[data-hidden="1"] {
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  transition:
+    opacity 0.3s ease,
+    visibility 0s linear 0.3s,
+    background 0.6s ease;
+}
+
+/* ---- listening --------------------------------------------------------- */
+.listen {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 24px;
+  text-align: center;
+  /* Above the reader: when a place is found it covers the page for a moment,
+     then lets go of it. */
+  z-index: 31;
+}
+/* The words the search is guessing, rising behind the orb (ListenScreen.float).
+   Under everything on the layer: z-index -1 paints above the layer's own
+   background and below the orb, the words and the buttons. */
+.listen .floats {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  overflow: hidden;
+  pointer-events: none;
+}
+.listen .fw {
+  position: absolute;
+  transform: translate(-50%, -50%);
+  font-family: var(--quran);
+  line-height: 1.6;
+  white-space: nowrap;
+  direction: rtl;
+}
+.listen .fw > span {
+  display: inline-block;
+  opacity: 0;
+}
+.listen > .roundbtn {
+  position: absolute;
+  top: calc(18px + var(--safe-top));
+  inset-inline-end: 18px;
+}
+.listen .modechip-row {
+  position: absolute;
+  top: calc(22px + var(--safe-top));
+  inset-inline: 0;
+  display: flex;
+  justify-content: center;
+  pointer-events: none;
+}
+.modechip {
+  font-size: 13px;
+  padding: 8px 14px;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.modechip .dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--c1);
+  box-shadow: 0 0 10px var(--c1);
+}
+.modechip .extra {
+  color: var(--ink-60);
+}
+.listen .orbwrap {
+  width: min(92vw, 540px, 56svh);
+  min-width: 0;
+  animation: none;
+  transition: opacity 0.5s;
+}
+/* Until the microphone is provably hot the orb waits dimmed and nothing says
+   «listening» — a wave with no ears behind it would be a lie. */
+.listen[data-live="0"] .orbwrap {
+  opacity: 0.35;
+}
+.listen .found {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  animation: qpPop 0.8s var(--ease-out) both;
+}
+.listen .found .fname {
+  font-size: clamp(46px, 9vw, 78px);
+  line-height: 1.5;
+  direction: rtl;
+  font-weight: 500;
+}
+.listen .found .fsub {
+  font-size: 14px;
+  color: var(--ink-74);
+}
+.listen .ltitle {
+  margin: 0;
+  font-size: clamp(22px, 3vw, 28px);
+  font-weight: 500;
+  min-height: 1.5em;
+  transition: opacity 0.4s;
+}
+.listen .lsub {
+  margin: 0;
+  font-weight: 300;
+  font-size: 15px;
+  color: rgba(244, 241, 234, 0.7);
+  max-width: 36ch;
+  min-height: 1.6em;
+  transition: opacity 0.4s;
+}
+.listen[data-live="0"] .ltitle,
+.listen[data-live="0"] .lsub {
+  opacity: 0;
+}
+.listen .waiting {
+  position: absolute;
+  inset: 0;
+  margin: auto;
+  transition: opacity 0.4s;
+}
+.listen .ondevice {
+  position: absolute;
+  bottom: calc(28px + var(--safe-bottom));
+  font-size: 13px;
+  color: var(--ink-55);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.listen .ondevice .dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #ff5a5a;
+  box-shadow: 0 0 10px #ff5a5a;
+}
+
+
+/* ---- toast ------------------------------------------------------------- */
+.toast {
+  position: fixed;
+  top: calc(72px + var(--safe-top));
+  inset-inline: 0;
+  margin: auto;
+  width: max-content;
+  max-width: 86vw;
+  z-index: 36;
+  padding: 10px 18px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.08);
+  -webkit-backdrop-filter: blur(10px);
+  backdrop-filter: blur(10px);
+  font-size: 14px;
+  text-align: center;
+  animation: qpUp 0.5s both;
+  pointer-events: none;
+}
+body[data-scene="reading"] .toast {
+  top: calc(88px + var(--safe-top));
+}
+
+/* ---- reading ----------------------------------------------------------- */
+.reader .rbar {
+  position: absolute;
+  top: 0;
+  inset-inline: 0;
+  z-index: 2;
+  /* Down to the progress line (72 px + its 2), so the strip ends on a rule. */
+  padding: calc(14px + var(--safe-top)) clamp(14px, 3vw, 28px) 16px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  /* Frosted: the page scrolls on under the controls, blurred, instead of the
+     top lines showing through sharp behind the × and the HUD. */
+  background: color-mix(in srgb, var(--bg) 30%, transparent);
+  -webkit-backdrop-filter: blur(6px);
+  backdrop-filter: blur(6px);
+}
+.reader .rbar .roundbtn {
+  width: 44px;
+  height: 44px;
+  border-color: rgba(255, 255, 255, 0.12);
+  background: rgba(0, 0, 0, 0.4);
+}
+.hud {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 16px 8px 12px;
+  padding-inline: 12px 16px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid var(--line-soft);
+  min-width: 0;
+}
+.hud canvas {
+  width: 34px;
+  height: 18px;
+  flex: none;
+}
+.hud .hs {
+  font-size: 14px;
+  font-weight: 500;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  min-width: 0;
+}
+.hud .ha {
+  font-size: 13px;
+  color: var(--ink-65);
+  white-space: nowrap;
+}
+.reader .progress {
+  position: absolute;
+  top: calc(72px + var(--safe-top));
+  inset-inline: clamp(14px, 3vw, 28px);
+  height: 2px;
+  border-radius: 2px;
+  background: var(--line-soft);
+  z-index: 2;
+  overflow: hidden;
+}
+.reader .progress > div {
+  height: 100%;
+  width: 0;
+  background: var(--grad);
+  box-shadow: 0 0 12px var(--glow);
+  transition: width 0.5s ease;
+}
+
+/* The page scrolls under a mask: it fades out at the top and the bottom, so
+   the reciter's eye is held in the band where the current line parks. */
+.page {
+  position: absolute;
+  inset: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+  scrollbar-width: none;
+  -webkit-mask-image: linear-gradient(to bottom, transparent 0, #000 24%, #000 72%, transparent 100%);
+  mask-image: linear-gradient(to bottom, transparent 0, #000 24%, #000 72%, transparent 100%);
+}
+.page::-webkit-scrollbar {
+  display: none;
+}
+/* The mushaf itself: always RTL, whatever language the buttons are in. Full
+   width, to the same edges as the bar above it: a reciter who enlarges the
+   text wants every word it can fit on a line, and a column capped at 980 px
+   broke «عَمَّ يَتَسَآءَلُونَ» onto its own line with a third of a wide screen
+   empty. */
+.mushaf {
+  /* The surah starts where the fade mask turns fully clear (24 %), so its
+     title card is the first thing on screen, whole, not dimmed. It used to be
+     40 % plus the card's own margin, and a surah scrolled to its top opened on
+     half a screen of nothing. Ayah 1 still reaches the 42 % reading line in
+     every surah with a basmala; in الفاتحة it sits a little higher, in the
+     clear band. */
+  padding: 24vh clamp(14px, 3vw, 28px) 0;
+  direction: rtl;
+  text-align: center;
+  font-family: var(--quran);
+  font-size: var(--font-size);
+  line-height: 2.1;
+  color: var(--ink);
+}
+/* One flowing paragraph per printed page; the page bands sit between them. */
+.mushaf .pg {
+  margin: 0;
+}
+/* The surah's title card, and the basmala under it. */
+.shead {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.1em;
+  margin: 0 0 0.4em;
+}
+.shead .stitle {
+  font-family: var(--ui);
+  font-size: 0.36em;
+  line-height: 1;
+  padding: 0.6em 1.4em;
+  border-radius: 999px;
+  border: 1px solid var(--glow);
+  box-shadow: 0 0 24px var(--glow-soft);
+}
+.shead .basmala {
+  font-size: 0.72em;
+}
+/* An ayah: its words, and its number in a ring. The ayahs already recited
+   step back, so the eye stays on the one being said. */
+.ay {
+  transition: opacity 0.8s ease;
+}
+.ay[data-past="1"] {
+  opacity: 0.36;
+}
+/*
+ * The ring is ONE size for every ayah, sized for the widest number in the
+ * Quran, «٢٨٦». The design's ring (1.05 × a 0.42 em number) was drawn for
+ * الفاتحة's single digits: measured over البقرة, two digits ran to 140 % of the
+ * ring's inside and three to 191 %. Now the number is smaller (0.34 em of the
+ * mushaf) and the ring is drawn from it — 2.35 × that — so ٢٨٦ fits inside the
+ * circle with room at its corners, and ١ and ٢٨٦ sit in the same ring.
+ */
+.am {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.35em;
+  height: 2.35em;
+  border-radius: 50%;
+  border: 1.5px solid rgba(255, 255, 255, 0.28);
+  font-family: var(--ui);
+  font-size: 0.34em;
+  line-height: 1;
+  vertical-align: 0.5em;
+  margin: 0 0.25em;
+  color: var(--ink-80);
+  transition: border-color 0.6s;
+  -webkit-user-select: none;
+  user-select: none;
+}
+.ay[data-past="1"] .am {
+  border-color: color-mix(in srgb, var(--c1) 90%, transparent);
+}
+
+/* A word. Its COLOUR is the verdict — there are no pills behind the words any
+   more; the recited ones are painted with the palette, the warnings keep
+   their fixed colours. */
+.chip {
+  display: inline-block;
+  white-space: nowrap;
+  line-height: 1.5;
+  color: var(--ink);
+  /* Carried by every word, transparent unless it is hidden or being heard.
+     Adding the border only when needed made those words taller than the rest,
+     and the line re-wrapped under the reciter. */
+  border-bottom: 2px solid transparent;
+  /* A word is tapped to hear it, and a finger resting on text would raise the
+     platform's selection callout over the page. */
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-touch-callout: none;
+  /* FAST, and never the colour. The engine already lands a word 1.0–1.2 s
+     after the reciter began it; every fade on top read as the page dragging
+     behind. A colour fade was worse than slow: the current word's glyphs are
+     `color: transparent` under the gradient, so the word the cursor had just
+     left faded back in FROM INVISIBLE — measured at 6–11 % opacity 60 ms
+     after the cursor moved on. The pre-redesign page had no transitions here
+     at all, and never felt behind. */
+  transition:
+    filter 0.12s ease-out,
+    transform 0.12s var(--ease-out),
+    border-color 0.3s;
+}
+.chip[data-state="ok"] {
+  background-image: linear-gradient(90deg, var(--c1), var(--c0));
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  color: transparent;
+}
+.chip[data-state="wrong"] {
+  color: var(--v-wrong);
+}
+.chip[data-state="unsure"],
+.chip[data-state="pending"] {
+  color: var(--v-pending);
+}
+.chip[data-state="skipped"] {
+  color: var(--v-skipped);
+}
+/* The word being said now: the other end of the palette, lifted and lit. */
+.chip[data-current="1"] {
+  background-image: linear-gradient(90deg, var(--c2), var(--c1));
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  color: transparent;
+  filter: drop-shadow(0 0 0.28em color-mix(in srgb, var(--c1) 75%, transparent));
+  transform: translateY(-0.04em) scale(1.06);
+}
+/* The word AFTER the cursor — where the reciter most likely is by now
+   (`PromptPage.lead`). A soft plate in the palette behind it, a prompt and not
+   a verdict: no colour of its own, so it can never say a word was recited.
+   A shape of its OWN, behind the glyphs, that exists only while the word is
+   the lead. It was the word's background and a box-shadow ring: when the word
+   became current its gradient clipped the background away at once, its
+   corners went square, and the ring faded out over 0.15 s — a square outline
+   flashing round every word the cursor reached (5 px at 20 ms, measured). Now
+   it is gone the instant the word takes the turn. */
+.chip[data-lead="1"] {
+  position: relative;
+}
+.chip[data-lead="1"]::before {
+  content: "";
+  position: absolute;
+  inset: -0.04em -0.12em 0;
+  z-index: -1;
+  border-radius: 0.3em;
+  background: color-mix(in srgb, var(--c1) 20%, transparent);
+  pointer-events: none;
+}
+/* The word being said ALOUD by the app, after a tap. An underline, not
+   a colour: every colour on this page is already a verdict. */
+.chip.speaking {
+  border-bottom-color: var(--c0);
+}
+/*
+ * Review mode: a word not yet recited keeps its place and its exact width, but
+ * shows only a rule where it sits. THE CURRENT WORD IS THE EXCEPTION — it shows
+ * the moment the tracker reaches it, or the page seems a beat behind. Two
+ * things still hold back: the word AFTER the current one, and an AYAH'S
+ * OPENING word even while current — flowing on inside an ayah is momentum,
+ * but producing its first word from nothing is the memory being tested.
+ * TRANSPARENT rather than hidden, so revealing a word moves nothing.
+ */
+.page.hidewords .chip:not([data-seen]):not([data-current="1"]),
+.page.hidewords .chip[data-ayahstart]:not([data-seen]) {
+  color: transparent;
+  -webkit-text-fill-color: transparent;
+  background-image: none;
+  filter: none;
+  transform: none;
+  border-bottom-color: rgba(244, 241, 234, 0.28);
+}
+/* A word coming out from under its rule arrives out of focus and sharpens —
+   the design's blur, applied only for the moment of the reveal. A standing
+   blur on every hidden word would be thousands of live filters on البقرة. */
+@keyframes qpReveal {
+  from {
+    filter: blur(6px);
+  }
+  to {
+    filter: blur(0);
+  }
+}
+.page.hidewords .chip[data-seen]:not([data-current="1"]) {
+  animation: qpReveal 0.6s ease both;
+}
+
+/*
+ * The Latin reading, under its word — OUTSIDE the word's own box. The room for
+ * it is margin, and the reading is taken out of flow into that margin:
+ * absolute, so it can never widen the word and re-wrap the ayah, and
+ * `left/right: 0` makes its box exactly the word's width, which is the width
+ * `fitTranslit` measures against.
+ */
+.page.translit .chip {
+  position: relative;
+  /* The capsule (1.35 × the reading size) and the gap above it. */
+  margin-bottom: calc(1.5em * var(--tr-size));
+}
+/* With a Latin line under the words, the words need more air than the
+   mushaf's own space (0.2 em): each reading may reach a little past its word,
+   and at the plain spacing a third of neighbouring readings came within 4 px
+   and read as one. The old design spaced its words wider for the same reason. */
+.page.translit .mushaf {
+  word-spacing: 0.12em;
+}
+.chip > .tr {
+  position: absolute;
+  top: calc(100% + 4px);
+  /* The capsule is a flex item placed at the TOP of this box: every capsule on
+     a line starts at the same height and is the same height, so the row reads
+     as one line of capsules whatever size each reading's text had to be. */
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  /* The room the old design's words carried as padding, given back to the
+     reading alone: the Arabic keeps its spacing, and fewer readings have to
+     shrink to fit under a narrow word. */
+  left: calc(-3px * var(--scale));
+  right: calc(-3px * var(--scale));
+  font-family: var(--ui);
+  font-weight: 400;
+  /* ALWAYS the full reading size here — even for a reading that has to
+     shrink. Only the text inside the capsule shrinks; the capsule keeps its
+     height, so a shrunk reading does not sit higher than its neighbours. */
+  font-size: calc(1em * var(--tr-size));
+  line-height: 1;
+  text-align: center;
+  white-space: nowrap;
+  /* Its own colour, never the word's: a reading is not what was recited, and
+     painting it in the verdict would say the engine had judged it. */
+  color: var(--ink-55);
+  -webkit-text-fill-color: var(--ink-55);
+  background: none;
+  direction: ltr;
+  unicode-bidi: isolate;
+  /* Part of its word's tap target: a reciter who cannot read the Arabic taps
+     the reading they CAN read, and hears the word above it. */
+  cursor: pointer;
+  /* The word's own lift timing, so the inverse below cancels it all the way. */
+  transition: transform 0.5s var(--ease-out);
+}
+/*
+ * The capsule: the ayah ring's own line — 1.5 px, the same grey, turning the
+ * palette's colour once the ayah is recited, as the ring does — around the
+ * reading. Its HEIGHT is fixed at the full reading size (the `/ fit` undoes the
+ * shrink for this one length), so a shrunk reading gets smaller text in the
+ * same capsule; its padding shrinks with the text, so the fit stays linear.
+ */
+.chip > .tr > span {
+  display: flex;
+  align-items: center;
+  flex: none;
+  font-size: calc(1em * var(--tr-fit, 1));
+  height: calc(1.35em / var(--tr-fit, 1));
+  padding: 0 0.5em;
+  border: 1.5px solid rgba(255, 255, 255, 0.28);
+  border-radius: 999px;
+  transition: border-color 0.6s;
+}
+.ay[data-past="1"] .chip > .tr > span {
+  border-color: color-mix(in srgb, var(--c1) 90%, transparent);
+}
+/*
+ * The current word is lifted and scaled (`.chip[data-current]`), and the
+ * reading is INSIDE the word, so it went with it: the current word's capsule
+ * sat taller and lower than every other on the line. The reading takes the
+ * exact inverse — same pivot (the word's centre: its box is 1.5 em + the 2 px
+ * rule, and the reading starts 1.5 em + 4 px down, so the centre is 0.75 em
+ * + 3 px above it, in the WORD's em, hence `/ --tr-size`), undone in reverse
+ * order — so the Arabic lifts and the capsule does not move.
+ */
+.chip[data-current="1"] > .tr {
+  transform-origin: 50% calc(-0.75em / var(--tr-size) - 3px);
+  transform: scale(calc(1 / 1.06)) translateY(calc(0.04em / var(--tr-size)));
+}
+
+/*
+ * Where the printed mushaf page turns — the iOS prompter's end-of-page band.
+ * The full width of the text, in the palette's colour: a clear break between
+ * two printed pages, drawn with the same line as the ayah rings and capsules.
+ */
+.pageband {
+  display: block;
+  /* Centred on the INK between the two pages, not on the line boxes: the line
+     above ends in descenders, the line below starts under tall harakat, so
+     equal margins put it visibly nearer the ayah above. Measured over eight of
+     البقرة's page turns, the typical gaps come out equal (±2 px). */
+  margin: 0.55em 0 0.69em;
+  font-family: var(--ui);
+  font-size: 0.3em;
+  line-height: 1;
+  padding: 0.55em 1.3em;
+  border-radius: 999px;
+  border: 1.5px solid color-mix(in srgb, var(--c1) 70%, transparent);
+  background: color-mix(in srgb, var(--c1) 10%, transparent);
+  color: color-mix(in srgb, var(--c1) 70%, var(--ink));
+  text-align: center;
+  white-space: nowrap;
+  pointer-events: none;
+}
+/* With readings on, the line above ends in capsules that reach almost to the
+   bottom of its line box — 14 px from the band where the plain page leaves
+   38 — so the band moves further down, in the same total space. */
+.page.translit .pageband {
+  margin: 0.98em 0 0.26em;
+}
+
+/*
+ * The end of the scroll: the start screen's own three, in the design's own
+ * forms. Enough room below them that, scrolled to the very end, they sit in
+ * the band the mask leaves clear — and enough, with them, for the last line
+ * to park at 42 %.
+ */
+.tail {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+  padding: 14vh 0 38vh;
+  font-family: var(--ui);
+  font-size: 15px;
+  line-height: 1.4;
+}
+.tail:empty {
+  padding: 0 0 60vh;
+}
+
+/* ---- failure & loading ------------------------------------------------- */
+.failure {
+  z-index: 35;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  padding: 32px;
+  text-align: center;
+}
+.failure > .roundbtn {
+  position: absolute;
+  top: calc(18px + var(--safe-top));
+  inset-inline-end: 18px;
+}
+.failure .ficon {
+  width: 88px;
+  height: 88px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  border: 1px solid var(--line);
+  color: var(--ink-74);
+  margin-bottom: 8px;
+  box-shadow: 0 0 40px var(--glow-soft);
+}
+.failure .ficon svg {
+  width: 38px;
+  height: 38px;
+}
+.failure .ftitle {
+  font-size: clamp(22px, 3vw, 28px);
+  font-weight: 500;
+}
+.failure .fbody {
+  font-weight: 300;
+  font-size: 15px;
+  line-height: 1.7;
+  color: rgba(244, 241, 234, 0.7);
+  max-width: 38ch;
+}
+.failure .cta {
+  margin-top: 10px;
+}
+
+.loading {
+  z-index: 60;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  transition: opacity 0.4s;
+}
+.loading .spinner[data-hidden="1"],
+.loading .bar[data-hidden="1"] {
+  display: none;
+}
+.loading .bar {
+  width: min(280px, 70vw);
+  height: 3px;
+  border-radius: 3px;
+  background: var(--line-soft);
+  overflow: hidden;
+}
+.loading .bar > div {
+  height: 100%;
+  width: 0;
+  background: var(--grad);
+  box-shadow: 0 0 12px var(--glow);
+  transition: width 0.2s;
+}
+.loading .msg {
+  font-size: 15px;
+  color: var(--ink-74);
+}
+.loading .msg + .msg {
+  font-size: 13px;
+  color: var(--ink-55);
+}
+
+/* ---- bottom sheets ------------------------------------------------------ */
+dialog.sheet {
+  border: 1px solid var(--line-soft);
+  border-bottom: 0;
+  padding: 0;
+  margin: auto auto 0;
+  width: 100%;
+  max-width: 520px;
+  max-height: calc(100svh - 24px);
+  border-radius: 28px 28px 0 0;
+  background: var(--sheet);
+  color: var(--ink);
+  overflow: hidden;
+}
+dialog.sheet[open] {
+  animation: qpSheet 0.45s var(--ease-out) both;
+}
+dialog.sheet::backdrop {
+  background: rgba(0, 0, 0, 0.55);
+  -webkit-backdrop-filter: blur(6px);
+  backdrop-filter: blur(6px);
+  animation: qpFade 0.3s both;
+}
+.grabber {
+  align-self: center;
+  width: 40px;
+  height: 4px;
+  border-radius: 4px;
+  background: rgba(255, 255, 255, 0.18);
+  flex: none;
+}
+.shd {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+}
+.shd h3 {
+  margin: 0;
+  font-weight: 500;
+  font-size: 20px;
+}
+.donebtn {
+  border: 0;
+  cursor: pointer;
+  padding: 9px 18px;
+  border-radius: 999px;
+  background: var(--line-soft);
+  font-size: 14px;
+}
+.donebtn:hover {
+  background: rgba(255, 255, 255, 0.14);
+}
+
+/* settings */
+.settings-body {
+  max-height: calc(100svh - 24px);
+  overflow-y: auto;
+  scrollbar-width: none;
+  padding: 14px 24px calc(28px + var(--safe-bottom));
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+.sgroup {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.slabel {
+  display: flex;
+  justify-content: space-between;
+  font-size: 14px;
+  color: var(--ink-80);
+}
+.sfoot {
+  font-size: 12.5px;
+  line-height: 1.6;
+  color: var(--ink-55);
+}
+.preview {
+  min-height: 120px;
+  padding: 12px;
+  border-radius: 18px;
+  background: var(--bg);
+  border: 1px solid var(--line-soft);
+  display: grid;
+  place-items: center;
+  font-family: var(--quran);
+  direction: rtl;
+  line-height: 1.6;
+  overflow: hidden;
+}
+.preview .chip {
+  margin: 0 0.12em;
+}
+input[type="range"] {
+  width: 100%;
+  accent-color: var(--c1);
+}
+.pickgrid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+}
+.pickgrid button {
+  cursor: pointer;
+  border-radius: 16px;
+  font-size: 13px;
+  border: 1.5px solid rgba(255, 255, 255, 0.12);
+  transition: border-color 0.3s;
+}
+.pickgrid .pal {
+  padding: 12px 8px;
+  background: rgba(255, 255, 255, 0.03);
+  border-color: var(--line-soft);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+}
+.pickgrid .pal .bar {
+  width: 100%;
+  height: 10px;
+  border-radius: 10px;
+}
+.pickgrid .bd {
+  padding: 14px 8px;
+}
+.pickgrid button[aria-pressed="true"] {
+  border-color: var(--c1);
+}
+.pickgrid .pal[aria-pressed="true"] {
+  border-color: var(--pal-c1, var(--c1));
+}
+.toggle {
+  border: 0;
+  background: transparent;
+  cursor: pointer;
+  padding: 0;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+  text-align: start;
+  font-size: 14px;
+  color: rgba(244, 241, 234, 0.9);
+}
+.toggle .track {
+  flex: none;
+  width: 48px;
+  height: 28px;
+  border-radius: 14px;
+  padding: 3px;
+  background: rgba(255, 255, 255, 0.14);
+  transition: background 0.3s;
+  display: flex;
+  justify-content: flex-start;
+}
+.toggle .track > span {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: var(--ink);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.4);
+}
+.toggle[aria-checked="true"] .track {
+  background: linear-gradient(90deg, var(--c0), var(--c1));
+  justify-content: flex-end;
+}
+.langrow {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 14px;
+  color: var(--ink-80);
+}
+
+/* the surah index */
+dialog.picker {
+  max-width: 560px;
+  height: calc(100svh - 48px);
+}
+.picker-body {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+.picker-top {
+  padding: 14px 20px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  flex: none;
+}
+.search {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 0 14px;
+  height: 46px;
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid var(--line-soft);
+}
+.search svg {
+  width: 17px;
+  height: 17px;
+  opacity: 0.6;
+  flex: none;
+}
+.search input {
+  flex: 1;
+  min-width: 0;
+  border: 0;
+  outline: 0;
+  background: transparent;
+  color: var(--ink);
+  font-size: 15px;
+}
+.search input::placeholder {
+  color: var(--ink-55);
+}
+.surahlist {
+  flex: 1;
+  overflow-y: auto;
+  scrollbar-width: none;
+  padding: 0 12px calc(24px + var(--safe-bottom));
+}
+.surahlist::-webkit-scrollbar {
+  display: none;
+}
+.srow {
+  width: 100%;
+  border: 0;
+  background: transparent;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 12px 10px;
+  border-radius: 14px;
+  text-align: start;
+  transition: background 0.25s;
+}
+.srow:hover {
+  background: rgba(255, 255, 255, 0.06);
+}
+.srow.last {
+  background: rgba(255, 255, 255, 0.04);
+}
+.srow .snum {
+  flex: none;
+  width: 38px;
+  height: 38px;
+  border-radius: 12px;
+  display: grid;
+  place-items: center;
+  font-size: 13px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  color: var(--ink-85);
+}
+.srow.last .snum {
+  border-color: color-mix(in srgb, var(--c1) 70%, transparent);
+}
+.srow .stext {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.srow .sar {
+  font-size: 22px;
+  line-height: 1.4;
+  direction: rtl;
+  text-align: start;
+  font-weight: 500;
+}
+.srow .ssub {
+  font-size: 12.5px;
+  color: var(--ink-55);
+}
+.badge {
+  flex: none;
+  font-size: 11.5px;
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: var(--grad);
+  color: #05060a;
+  font-weight: 600;
+}
+.nomatch {
+  padding: 40px 10px;
+  text-align: center;
+  color: var(--ink-55);
+  font-size: 14px;
+}
+
+/* ---- About ------------------------------------------------------------- */
+dialog.about {
+  border: 0;
+  padding: 0;
+  margin: 0;
+  width: 100vw;
+  height: 100dvh;
+  max-width: none;
+  max-height: none;
+  background: var(--bg);
+  color: var(--ink);
+  overflow-y: auto;
+  scrollbar-width: none;
+}
+dialog.about::-webkit-scrollbar {
+  display: none;
+}
+dialog.about[open] {
+  animation: qpSheet 0.5s var(--ease-out) both;
+}
+dialog.about::backdrop {
+  background: var(--bg);
+}
+.abar {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: calc(16px + var(--safe-top)) clamp(16px, 4vw, 40px) 16px;
+  background: linear-gradient(to bottom, var(--bg) 60%, transparent);
+}
+.abar span {
+  font-weight: 500;
+  font-size: 16px;
+}
+/* The back chevron points to where the page came from: the start of the line. */
+[dir="rtl"] .abar .roundbtn svg {
+  transform: scaleX(-1);
+}
+.ahero {
+  max-width: 760px;
+  margin: 0 auto;
+  padding: 12px clamp(18px, 4vw, 40px) 8px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+  text-align: center;
+}
+.ahero img {
+  width: 112px;
+  height: 112px;
+  border-radius: 26px;
+  box-shadow:
+    0 0 0 1px rgba(255, 255, 255, 0.1),
+    0 20px 60px var(--glow-soft);
+}
+.ahero h1 {
+  margin: 6px 0 0;
+  font-weight: 500;
+  font-size: clamp(32px, 6vw, 52px);
+  line-height: 1.1;
+}
+/* Tucked up under the name it belongs to, the link in the palette's colour. */
+.ahero .poweredby {
+  margin: -8px 0 0;
+  font-size: 14px;
+  line-height: 1.6;
+  color: var(--ink-60);
+}
+.ahero .poweredby a {
+  color: color-mix(in srgb, var(--c1) 75%, var(--ink));
+  font-weight: 500;
+}
+.ahero .poweredby a:hover {
+  color: var(--ink);
+}
+.ahero .intro {
+  margin: 0;
+  font-weight: 300;
+  font-size: 16px;
+  line-height: 1.8;
+  color: var(--ink-74);
+  text-wrap: pretty;
+}
+.ahero .demo {
+  margin: 8px 0 0;
+  font-family: var(--quran);
+  font-size: clamp(30px, 5vw, 44px);
+  line-height: 1.9;
+  direction: rtl;
+  display: flex;
+  gap: 0.3em;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+.trust {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 8px;
+}
+.trust span {
+  font-size: 13px;
+  padding: 8px 14px;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  color: rgba(244, 241, 234, 0.82);
+}
+.asec {
+  max-width: 1120px;
+  margin: 0 auto;
+  padding: 48px clamp(18px, 4vw, 40px) 16px;
+}
+.asec.first {
+  padding-top: 56px;
+}
+.asec h2 {
+  margin: 0 0 22px;
+  font-weight: 500;
+  font-size: clamp(24px, 3.2vw, 36px);
+}
+.agrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 250px), 1fr));
+  gap: 12px;
+}
+.agrid.wide {
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 300px), 1fr));
+}
+.agrid.tips {
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 320px), 1fr));
+}
+.card {
+  padding: 24px 22px 26px;
+  border-radius: 22px;
+  border: 1px solid rgba(255, 255, 255, 0.09);
+  background: rgba(255, 255, 255, 0.025);
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.card h3 {
+  margin: 0;
+  font-weight: 500;
+  font-size: 19px;
+}
+.card p {
+  margin: 0;
+  font-weight: 300;
+  font-size: 15px;
+  line-height: 1.75;
+  color: var(--ink-72);
+  text-wrap: pretty;
+}
+.card .num {
+  font-size: 13px;
+  font-weight: 500;
+}
+button.card {
+  text-align: start;
+  cursor: pointer;
+  padding: 22px 20px 24px;
+  transition:
+    border-color 0.4s,
+    background 0.4s,
+    transform 0.4s;
+}
+button.card:hover {
+  background: rgba(255, 255, 255, 0.05);
+  transform: translateY(-3px);
+}
+button.card[aria-pressed="true"] {
+  border-color: color-mix(in srgb, var(--c1) 60%, transparent);
+}
+button.card .chead {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  width: 100%;
+}
+button.card .chead span:first-child {
+  font-weight: 500;
+  font-size: 18px;
+}
+button.card .badge {
+  font-size: 12px;
+}
+button.card p {
+  font-size: 14.5px;
+}
+.legend-card {
+  padding: 22px;
+  gap: 14px;
+  background: none;
+}
+.legend-card > span {
+  font-size: 15px;
+  color: var(--ink-85);
+}
+.legend-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 14.5px;
+  color: var(--ink-80);
+}
+.swatch {
+  width: 28px;
+  height: 14px;
+  border-radius: 7px;
+  flex: none;
+}
+.swatch.now {
+  background: linear-gradient(90deg, var(--c2), var(--c1));
+  box-shadow: 0 0 12px color-mix(in srgb, var(--c1) 60%, transparent);
+}
+.swatch.lead {
+  background: color-mix(in srgb, var(--c1) 26%, transparent);
+}
+.swatch.ok {
+  background: linear-gradient(90deg, var(--c1), var(--c0));
+}
+.swatch.pending {
+  background: var(--v-pending);
+}
+.swatch.skipped {
+  background: var(--v-skipped);
+}
+.swatch.wrong {
+  background: var(--v-wrong);
+}
+.tap-card {
+  padding: 22px;
+  flex-direction: row;
+  gap: 14px;
+  align-items: flex-start;
+  background: none;
+}
+.tap-card svg {
+  width: 22px;
+  height: 22px;
+  flex: none;
+  margin-top: 2px;
+}
+.tap-card span {
+  font-size: 15px;
+  line-height: 1.7;
+  color: var(--ink-80);
+}
+.install-card .ihead {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.install-card .ihead svg {
+  width: 22px;
+  height: 22px;
+  flex: none;
+  color: var(--c0);
+}
+.install-card .cta {
+  align-self: flex-start;
+  margin-top: 4px;
+}
+.install-card ul {
+  margin: 4px 0 0;
+  padding-inline-start: 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-weight: 300;
+  font-size: 14px;
+  line-height: 1.7;
+  color: var(--ink-72);
+}
+.aprivacy {
+  padding: 64px clamp(18px, 4vw, 40px) 72px;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 340px), 1fr));
+  gap: 28px;
+  align-items: end;
+}
+.aprivacy h2 {
+  margin: 0;
+  font-weight: 500;
+  font-size: clamp(32px, 5vw, 58px);
+  line-height: 1.15;
+  text-wrap: balance;
+}
+.aprivacy > div {
+  display: flex;
+  flex-direction: column;
+  gap: 22px;
+}
+.aprivacy p {
+  margin: 0;
+  font-weight: 300;
+  font-size: 16px;
+  line-height: 1.8;
+  color: var(--ink-74);
+  text-wrap: pretty;
+}
+/* «ابدأ التلاوة الآن» and «تواصل معنا», side by side — wrapping, not
+   squeezing, when a narrow screen has no room for both. */
+.aactions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+}
+.contact {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  padding: 14px 24px;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  background: rgba(255, 255, 255, 0.04);
+  color: var(--ink);
+  font-size: 15px;
+  font-weight: 500;
+  text-decoration: none;
+  transition:
+    border-color 0.3s,
+    background 0.3s;
+}
+.contact:hover {
+  color: var(--ink);
+  border-color: rgba(255, 255, 255, 0.4);
+  background: rgba(255, 255, 255, 0.08);
+}
+.contact svg {
+  width: 18px;
+  height: 18px;
+  flex: none;
+}
+.afoot {
+  border-top: 1px solid var(--line-soft);
+  padding: 24px clamp(18px, 4vw, 40px) calc(24px + var(--safe-bottom));
+  display: flex;
+  flex-wrap: wrap;
+  gap: 18px;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 13px;
+  color: var(--ink-60);
+}
+.afoot .links {
+  display: flex;
+  gap: 20px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+/* The colophon's text is Latin either way, so it is pinned LTR. */
+.colophon {
+  direction: ltr;
+  unicode-bidi: isolate;
+  color: var(--ink-55);
+}
+.colophon a {
+  color: inherit;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+/* ---- the meaning sheet (ui/meaning.ts) --------------------------------- */
+/*
+ * An iOS sheet with two detents, over the foot of the reading screen. Folded,
+ * it is no taller than the band the page's fade mask already dims (the bottom
+ * 28 %), so it covers nothing the reciter reads; the page parks the current
+ * line above it either way (`PromptPage.setReserve`). It slides away whenever
+ * there is no meaning to show — before `located`, in review mode, when off.
+ */
+.msheet {
+  position: absolute;
+  z-index: 3;
+  bottom: 0;
+  inset-inline: 0;
+  margin: 0 auto;
+  width: 100%;
+  max-width: 680px;
+  display: flex;
+  flex-direction: column;
+  padding: 0 clamp(16px, 4vw, 22px) calc(12px + var(--safe-bottom));
+  border: 1px solid var(--line-soft);
+  border-bottom: 0;
+  border-radius: 26px 26px 0 0;
+  background: color-mix(in srgb, var(--sheet) 84%, transparent);
+  -webkit-backdrop-filter: blur(22px) saturate(1.3);
+  backdrop-filter: blur(22px) saturate(1.3);
+  box-shadow: 0 -18px 50px rgba(0, 0, 0, 0.5);
+  transition:
+    transform 0.5s var(--ease-out),
+    opacity 0.35s ease,
+    visibility 0s linear 0s;
+}
+.msheet[data-hidden="1"] {
+  transform: translateY(calc(100% + 12px));
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  transition:
+    transform 0.4s ease,
+    opacity 0.3s ease,
+    visibility 0s linear 0.4s;
+}
+/* Put away by the line: everything slides below the screen but the strip
+   the line sits in, above the home indicator. `:not`, so a sheet with nothing
+   to show still slides all the way away. */
+.msheet[data-tucked="1"]:not([data-hidden="1"]) {
+  transform: translateY(calc(100% - 28px - var(--safe-bottom)));
+}
+/* The line: hides the sheet and shows it again. A thumb-sized target around
+   the 40 × 4 bar, and the one thing left on screen while the sheet is away. */
+.mgrab {
+  flex: none;
+  align-self: center;
+  width: 120px;
+  height: 28px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  cursor: pointer;
+  display: grid;
+  place-items: center;
+  touch-action: none;
+}
+.mgrab .grabber {
+  transition:
+    background 0.3s,
+    width 0.3s;
+}
+.mgrab:hover .grabber,
+.msheet[data-tucked="1"] .mgrab .grabber {
+  width: 48px;
+  background: rgba(255, 255, 255, 0.4);
+}
+.mbody {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+/* The arrow row: opens and folds the sheet — the swipe is ours. */
+.mhead {
+  border: 0;
+  background: transparent;
+  cursor: pointer;
+  padding: 0 0 2px;
+  display: block;
+  text-align: inherit;
+  touch-action: none;
+}
+.mrow {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+/* The ayah's number in the page's own ring, lit as a recited ayah's is. */
+.mring {
+  flex: none;
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  border: 1.5px solid color-mix(in srgb, var(--c1) 85%, transparent);
+  box-shadow: 0 0 12px var(--glow-soft);
+  display: grid;
+  place-items: center;
+  font-size: 12.5px;
+  line-height: 1;
+  color: var(--ink-85);
+}
+.mlang {
+  flex: 1;
+  min-width: 0;
+  text-align: start;
+  font-size: 13px;
+  color: var(--ink-60);
+}
+.mchev {
+  flex: none;
+  width: 28px;
+  height: 28px;
+  display: grid;
+  place-items: center;
+  color: var(--ink-60);
+  transition: transform 0.4s var(--ease-out);
+}
+.mchev svg {
+  width: 16px;
+  height: 16px;
+}
+.msheet[data-open="1"] .mchev {
+  transform: rotate(180deg);
+}
+.mscroll {
+  overflow: hidden;
+}
+.msheet[data-open="1"] .mscroll {
+  max-height: min(44svh, 460px);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-width: none;
+}
+.msheet[data-open="1"] .mscroll::-webkit-scrollbar {
+  display: none;
+}
+/* The meaning: in its own language's direction, sized with the reciter's
+   text size but kept a reading size — never the mushaf's. */
+.mtext {
+  margin: 0;
+  font-size: clamp(15px, calc(var(--font-size) * 0.3), 22px);
+  line-height: 1.7;
+  font-weight: 350;
+  color: var(--ink-85);
+  text-align: start;
+  text-wrap: pretty;
+  cursor: pointer;
+}
+.msheet[data-open="0"] .mtext {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 3;
+  line-clamp: 3;
+  overflow: hidden;
+}
+@media (max-height: 560px) {
+  .msheet[data-open="0"] .mtext {
+    -webkit-line-clamp: 2;
+    line-clamp: 2;
+  }
+}
+/* Urdu reads in Nastaliq where the device has it, and needs the room. */
+.mtext:lang(ur),
+.mnote:lang(ur) p {
+  font-family: "Noto Nastaliq Urdu", "Noto Naskh Arabic", var(--ui);
+  line-height: 2.25;
+}
+/* A footnote marker — the translation's own `[2]`, made something to tap. */
+.fn {
+  border: 0;
+  cursor: pointer;
+  font: inherit;
+  font-size: 0.72em;
+  font-weight: 500;
+  line-height: 1;
+  padding: 0.2em 0.35em;
+  margin: 0 0.05em;
+  border-radius: 6px;
+  vertical-align: 0.3em;
+  background: color-mix(in srgb, var(--c1) 18%, transparent);
+  color: color-mix(in srgb, var(--c0) 80%, var(--ink));
+  transition:
+    background 0.3s,
+    color 0.3s;
+}
+.fn[aria-pressed="true"] {
+  background: var(--c1);
+  color: #05060a;
+}
+.mextra {
+  display: flex;
+  gap: 8px;
+  margin-top: 6px;
+}
+.mextra:empty {
+  display: none;
+}
+.fn.more {
+  font-size: 12px;
+  vertical-align: baseline;
+  padding: 6px 12px;
+  border-radius: 999px;
+}
+.mnote {
+  position: relative;
+  margin: 10px 0 2px;
+  padding: 12px 14px;
+  padding-inline-end: 42px;
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid var(--line-soft);
+  animation: qpFade 0.3s both;
+}
+.mnote p {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 300;
+  line-height: 1.75;
+  color: var(--ink-80);
+  white-space: pre-line;
+}
+.mnoteclose {
+  position: absolute;
+  top: 7px;
+  inset-inline-end: 7px;
+  width: 30px;
+  height: 30px;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
+  color: var(--ink-60);
+  cursor: pointer;
+  display: grid;
+  place-items: center;
+}
+.mnoteclose svg {
+  width: 14px;
+  height: 14px;
+}
+/* «translator · source» — under every meaning shown. */
+.mcredit {
+  font-size: 11.5px;
+  color: var(--ink-55);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* The settings row that unfolds the meaning picker. */
+.navrow {
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 16px;
+  border-radius: 16px;
+  border: 1px solid var(--line-soft);
+  background: rgba(255, 255, 255, 0.03);
+  font-size: 14px;
+  color: rgba(244, 241, 234, 0.9);
+  text-align: start;
+  transition: background 0.3s;
+}
+.navrow:hover {
+  background: rgba(255, 255, 255, 0.06);
+}
+.navrow > span:first-child {
+  flex: 1;
+}
+.navrow .nval {
+  font-size: 13.5px;
+  color: var(--ink-60);
+}
+.navrow .nchev {
+  display: grid;
+  place-items: center;
+  transform: rotate(180deg);
+  transition: transform 0.35s var(--ease-out);
+}
+.navrow[aria-expanded="true"] .nchev {
+  transform: none;
+}
+.navrow .nchev svg {
+  width: 16px;
+  height: 16px;
+  opacity: 0.6;
+}
+
+/* The meaning picker, unfolded under its row. */
+.mfold {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  animation: qpFade 0.3s both;
+}
+.mlist {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.mpick {
+  position: relative;
+  overflow: hidden;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 9px 12px;
+  border-radius: 14px;
+  border: 1.5px solid var(--line-soft);
+  background: rgba(255, 255, 255, 0.03);
+  text-align: start;
+  transition:
+    border-color 0.3s,
+    background 0.3s;
+}
+.mpick:hover {
+  background: rgba(255, 255, 255, 0.06);
+}
+.mpick[aria-checked="true"] {
+  border-color: var(--c1);
+  background: color-mix(in srgb, var(--c1) 8%, transparent);
+}
+/* «لغات أخرى…» — a way to more, not a choice: no radio, a dashed edge. */
+.mpick.more {
+  border-style: dashed;
+  background: transparent;
+}
+.mpick.more[data-state="loading"] {
+  opacity: 0.7;
+}
+.mphead {
+  margin: 10px 2px 2px;
+  font-size: 12.5px;
+  color: var(--ink-60);
+}
+.mpick[data-state="failed"] {
+  border-color: color-mix(in srgb, var(--v-wrong) 70%, transparent);
+}
+.mptext {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+.mpname {
+  font-size: 14.5px;
+  font-weight: 500;
+}
+.mpsub {
+  font-size: 12px;
+  color: var(--ink-55);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.mperr {
+  font-size: 12.5px;
+  color: #ff8a8a;
+}
+.mpstat {
+  flex: none;
+  font-size: 12.5px;
+  color: var(--ink-60);
+}
+.mpcheck {
+  flex: none;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  border: 1.5px solid rgba(255, 255, 255, 0.22);
+  transition:
+    border-color 0.3s,
+    box-shadow 0.3s;
+}
+.mpick[aria-checked="true"] .mpcheck {
+  border-color: var(--c1);
+  background: radial-gradient(circle, var(--c1) 0 42%, transparent 46%);
+  box-shadow: 0 0 10px var(--glow-soft);
+}
+.mpbar {
+  position: absolute;
+  inset-inline: 0;
+  bottom: 0;
+  height: 3px;
+  background: var(--line-soft);
+}
+.mpbar > span {
+  display: block;
+  height: 100%;
+  width: 0;
+  background: var(--grad);
+  box-shadow: 0 0 10px var(--glow);
+  transition: width 0.2s;
+}
+
+/* About: who translated the meanings, and from where. */
+.meanings-card ul {
+  margin: 2px 0 4px;
+  padding-inline-start: 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-weight: 300;
+  font-size: 14px;
+  line-height: 1.7;
+  color: var(--ink-72);
+}
+.meanings-card .cname {
+  color: var(--ink);
+  font-weight: 400;
+}
+.meanings-card .cver {
+  direction: ltr;
+  unicode-bidi: isolate;
+  color: var(--ink-55);
+}
+.meanings-card > a {
+  align-self: flex-start;
+  font-size: 14px;
+  font-weight: 500;
+  color: color-mix(in srgb, var(--c1) 75%, var(--ink));
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}

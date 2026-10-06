@@ -1,0 +1,251 @@
+<!doctype html>
+<!--
+  The site's privacy policy, linked from the About page's footer.
+
+  This is a plain static file in public/, not a Vite entry: it needs no
+  bundle, and adding an entry point would put it in the app's build graph for
+  no reason. It ships to https://prompter.alketab.app/privacy.html and is
+  precached by the service worker like every other file.
+
+  If the site's behaviour ever changes — a new network call, an analytics
+  script, a crash reporter, anything at all — this page has to change first.
+-->
+<html lang="en" dir="ltr">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Privacy Policy — Quran Prompter / ملقّن القرآن</title>
+    <meta name="robots" content="index, follow" />
+    <link rel="icon" href="/quran-prompter-icon-wave-192.png" />
+    <style>
+      :root {
+        color-scheme: dark;
+        --ink: #e8e8e8;
+        --dim: #9aa3a3;
+        --rule: #23302f;
+        --gold: #d6b25e;
+      }
+      * { box-sizing: border-box; }
+      body {
+        margin: 0;
+        padding: 3rem 1.25rem 5rem;
+        background: #000e16;
+        color: var(--ink);
+        font: 16px/1.75 -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
+      }
+      main { max-width: 44rem; margin: 0 auto; }
+      section + section { margin-top: 4rem; padding-top: 3rem; border-top: 1px solid var(--rule); }
+      h1 { font-size: 1.6rem; line-height: 1.35; margin: 0 0 0.35rem; }
+      h2 { font-size: 1.05rem; margin: 2.25rem 0 0.6rem; color: var(--gold); }
+      .updated { color: var(--dim); font-size: 0.85rem; margin: 0 0 2rem; }
+      p, li { color: var(--ink); }
+      ul { padding-inline-start: 1.3rem; }
+      li { margin: 0.4rem 0; }
+      strong { color: #fff; }
+      a { color: var(--gold); }
+      [dir="rtl"] { font-size: 17px; line-height: 2; }
+      footer { max-width: 44rem; margin: 4rem auto 0; padding-top: 2rem; border-top: 1px solid var(--rule); color: var(--dim); font-size: 0.85rem; }
+    </style>
+  </head>
+  <body>
+    <main>
+      <section dir="ltr" lang="en">
+        <h1>Privacy Policy</h1>
+        <p class="updated">Quran Prompter · ملقّن القرآن — prompter.alketab.app · last updated 6 October 2026</p>
+
+        <p><strong>This site collects nothing about you. Your voice never leaves your device.</strong></p>
+
+        <h2>Your voice</h2>
+        <p>
+          The site listens to your recitation through the microphone in order to
+          follow your place in the Quran. That audio is processed entirely inside
+          your browser, on your own device, by a speech model the site downloads
+          once and keeps. <strong>It is never recorded, never stored, and never
+          sent anywhere.</strong> It exists only in memory, for as long as it
+          takes to match the next word, and is then discarded.
+        </p>
+        <p>
+          Leaving the reading screen, or switching to another tab, closes the
+          microphone: the recording indicator goes out.
+        </p>
+
+        <h2>What the site downloads</h2>
+        <ul>
+          <li>
+            <strong>From this site:</strong> the app itself, the text of the
+            Quran, its fonts, and the 72 MB speech model — once, on your first
+            visit. After that the site opens and works with no network.
+          </li>
+          <li>
+            <strong>A translation of the meanings, only if you choose one</strong>
+            in the settings: one file from this site, kept on your device.
+          </li>
+          <li>
+            <strong>«More languages…», only if you open it:</strong> the list of
+            translations, and the one you pick, come directly from QuranEnc.com,
+            the publisher of those translations.
+          </li>
+          <li>
+            <strong>Tapping a word to hear it:</strong> that word's recitation is
+            played from audio.qurancdn.com.
+          </li>
+        </ul>
+        <p>
+          Like every website, the servers that deliver these files receive the
+          ordinary details of each request, such as your IP address. The site
+          itself adds no analytics and no tracking of any kind.
+        </p>
+
+        <h2>What is stored on your device</h2>
+        <p>In your browser's storage for this site, readable by nothing else:</p>
+        <ul>
+          <li>your settings: the interface language, text size, mode, highlight colours, background, Latin letters, mistake sound, and the translation you chose;</li>
+          <li>the last ayah you reached, so the site can offer to resume from it;</li>
+          <li>offline copies of the app, the speech model, and the translation you chose.</li>
+        </ul>
+        <p>Clearing this site's data in your browser removes all of it.</p>
+
+        <h2>What there is none of</h2>
+        <ul>
+          <li>No account, no sign-in, no email address.</li>
+          <li>No analytics, no telemetry, no crash reporting.</li>
+          <li>No advertising and no advertising identifier.</li>
+          <li>No cookies and no tracking.</li>
+          <li>No data shared with anyone, because none is gathered.</li>
+        </ul>
+
+        <h2>Contacting us</h2>
+        <p>
+          «Contact us» on the About page opens an email in your own mail app,
+          with technical details pre-filled — the app version, your browser,
+          device and screen, your settings, and the last ayah you reached — to
+          help us with a problem. Nothing
+          is sent unless you send that email yourself, and you can edit or
+          remove those details first.
+        </p>
+
+        <h2>Children</h2>
+        <p>
+          The site is suitable for all ages. Because it collects no data at all,
+          it collects none from children either.
+        </p>
+
+        <h2>Permissions the site asks for</h2>
+        <ul>
+          <li><strong>Microphone</strong> — to hear your recitation and follow your place. Nothing else.</li>
+        </ul>
+
+        <h2>Changes</h2>
+        <p>
+          If the site's behaviour ever changes, this page changes before the
+          release does, and the date above is updated.
+        </p>
+
+        <h2>Contact</h2>
+        <p>
+          Questions about this policy:
+          <a href="mailto:info@iPhoneIslam.com">info@iPhoneIslam.com</a>
+        </p>
+      </section>
+
+      <section dir="rtl" lang="ar">
+        <h1>سياسة الخصوصية</h1>
+        <p class="updated">ملقّن القرآن · prompter.alketab.app — آخر تحديث ٦ أكتوبر ٢٠٢٦</p>
+
+        <p><strong>هذا الموقع لا يجمع عنك شيئًا، وصوتك لا يغادر جهازك.</strong></p>
+
+        <h2>صوتك</h2>
+        <p>
+          يستمع الموقع إلى تلاوتك عبر الميكروفون ليتابع موضعك في المصحف. تُعالَج
+          هذه الأصوات كلها داخل متصفحك على جهازك، بنموذج تعرّف ينزّله الموقع مرة
+          واحدة ويحتفظ به. <strong>لا تُسجَّل، ولا تُحفَظ، ولا تُرسَل إلى أي
+          جهة.</strong> تبقى في الذاكرة بمقدار ما يلزم لمطابقة الكلمة التالية، ثم
+          تُمحى.
+        </p>
+        <p>
+          والخروج من شاشة القراءة، أو الانتقال إلى تبويب آخر، يُغلق الميكروفون:
+          ينطفئ مؤشّر التسجيل.
+        </p>
+
+        <h2>ما يُنزّله الموقع</h2>
+        <ul>
+          <li>
+            <strong>من هذا الموقع:</strong> التطبيق نفسه، ونص القرآن، وخطوطه،
+            ونموذج التعرّف على الصوت (٧٢ ميغابايت) — مرة واحدة في أول زيارة، ثم
+            يفتح الموقع ويعمل دون إنترنت.
+          </li>
+          <li>
+            <strong>ترجمة المعاني، إن اخترتها فقط</strong> من الإعدادات: ملف واحد
+            من هذا الموقع يُحفَظ على جهازك.
+          </li>
+          <li>
+            <strong>«لغات أخرى…»، إن فتحتها فقط:</strong> قائمة الترجمات والترجمة
+            التي تختارها تأتي مباشرة من موسوعة القرآن الكريم (QuranEnc.com) ناشرة
+            هذه الترجمات.
+          </li>
+          <li>
+            <strong>لمس كلمة لسماعها:</strong> تُشغَّل تلاوة تلك الكلمة من
+            audio.qurancdn.com.
+          </li>
+        </ul>
+        <p>
+          وكأي موقع، تتلقّى الخوادم التي تقدّم هذه الملفات تفاصيل الطلب المعتادة،
+          كعنوان IP. والموقع نفسه لا يضيف أي تحليلات ولا أي تتبّع.
+        </p>
+
+        <h2>ما يُحفَظ على جهازك</h2>
+        <p>في تخزين متصفحك الخاص بهذا الموقع، لا يقرؤه شيء آخر:</p>
+        <ul>
+          <li>إعداداتك: لغة الواجهة، وحجم الخط، والوضع، ولون التلوين، والخلفية، والحروف اللاتينية، والتنبيه الصوتي، والترجمة التي اخترتها؛</li>
+          <li>آخر آية وصلت إليها، ليعرض عليك الموقع أن تكمل منها؛</li>
+          <li>نسخ للعمل دون إنترنت: التطبيق، ونموذج التعرّف، والترجمة التي اخترتها.</li>
+        </ul>
+        <p>ومسح بيانات هذا الموقع من متصفحك يحذف ذلك كله.</p>
+
+        <h2>وما ليس فيه</h2>
+        <ul>
+          <li>لا حساب ولا تسجيل دخول ولا بريد إلكتروني.</li>
+          <li>لا تحليلات ولا قياسات ولا تقارير أعطال.</li>
+          <li>لا إعلانات ولا معرّف إعلاني.</li>
+          <li>لا كوكيز ولا تتبّع.</li>
+          <li>لا مشاركة لأي بيانات مع أحد، إذ لا تُجمع أصلًا.</li>
+        </ul>
+
+        <h2>التواصل معنا</h2>
+        <p>
+          «تواصل معنا» في صفحة «عن ملقّن القرآن» يفتح رسالة بريد في تطبيق البريد
+          لديك، فيها تفاصيل تقنية جاهزة — رقم الإصدار، ومتصفحك وجهازك وشاشتك،
+          وإعداداتك، وآخر آية وصلت إليها — لتساعدنا على حل المشكلة. لا يُرسَل شيء إلا إن أرسلت الرسالة
+          بنفسك، ولك أن تعدّل تلك التفاصيل أو تحذفها قبل ذلك.
+        </p>
+
+        <h2>الأطفال</h2>
+        <p>
+          الموقع مناسب لكل الأعمار. ولأنه لا يجمع أي بيانات، فهو لا يجمع من
+          الأطفال شيئًا كذلك.
+        </p>
+
+        <h2>الأذونات التي يطلبها</h2>
+        <ul>
+          <li><strong>الميكروفون</strong> — ليسمع تلاوتك ويتابع موضعك. لا غير.</li>
+        </ul>
+
+        <h2>التغييرات</h2>
+        <p>
+          إن تغيّر سلوك الموقع يومًا، تتغيّر هذه الصفحة قبل الإصدار، ويُحدَّث
+          التاريخ أعلاه.
+        </p>
+
+        <h2>للتواصل</h2>
+        <p>
+          لأي سؤال عن هذه السياسة:
+          <a href="mailto:info@iPhoneIslam.com">info@iPhoneIslam.com</a>
+        </p>
+      </section>
+    </main>
+
+    <footer>
+      <a href="/">prompter.alketab.app</a>
+    </footer>
+  </body>
+</html>

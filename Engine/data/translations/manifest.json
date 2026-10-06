@@ -1,0 +1,143 @@
+{
+  "source": "QuranEnc.com",
+  "url": "https://quranenc.com",
+  "translations": [
+    {
+      "key": "arabic_moyassar",
+      "language": "ar",
+      "native": "العربية",
+      "name": {
+        "en": "Arabic",
+        "ar": "العربية"
+      },
+      "dir": "rtl",
+      "translator": {
+        "en": "At-Tafsir Al-Muyassar",
+        "ar": "التفسير الميسر"
+      },
+      "title": "Arabic Language - At-Tafsir Al-Muyassar",
+      "version": null,
+      "retrieved": "2026-10-04",
+      "bytes": 2606083
+    },
+    {
+      "key": "english_saheeh",
+      "language": "en",
+      "native": "English",
+      "name": {
+        "en": "English",
+        "ar": "الإنجليزية"
+      },
+      "dir": "ltr",
+      "translator": {
+        "en": "Noor International Center",
+        "ar": "مركز نور إنترناشونال"
+      },
+      "title": "English Translation - Noor International Center",
+      "version": "1.1.2",
+      "bytes": 1152279
+    },
+    {
+      "key": "french_rashid",
+      "language": "fr",
+      "native": "Français",
+      "name": {
+        "en": "French",
+        "ar": "الفرنسية"
+      },
+      "dir": "ltr",
+      "translator": {
+        "en": "Rachid Maach",
+        "ar": "رشيد معاش"
+      },
+      "title": "French Translation - Rachid Maach",
+      "version": "1.0.3",
+      "bytes": 1294793
+    },
+    {
+      "key": "spanish_garcia",
+      "language": "es",
+      "native": "Español",
+      "name": {
+        "en": "Spanish",
+        "ar": "الإسبانية"
+      },
+      "dir": "ltr",
+      "translator": {
+        "en": "Isa Garcia",
+        "ar": "عيسى غارسيا"
+      },
+      "title": "Spanish Translation - Isa Garcia",
+      "version": "1.0.2",
+      "bytes": 1256330
+    },
+    {
+      "key": "urdu_junagarhi",
+      "language": "ur",
+      "native": "اردو",
+      "name": {
+        "en": "Urdu",
+        "ar": "الأوردية"
+      },
+      "dir": "rtl",
+      "translator": {
+        "en": "Muhammad Junagarhi",
+        "ar": "محمد جوناكرهي"
+      },
+      "title": "Urdu Translation - Muhammad Junagarhi",
+      "version": "1.1.3",
+      "bytes": 5933175
+    },
+    {
+      "key": "indonesian_affairs",
+      "language": "id",
+      "native": "Indonesia",
+      "name": {
+        "en": "Indonesian",
+        "ar": "الإندونيسية"
+      },
+      "dir": "ltr",
+      "translator": {
+        "en": "Ministry of Religious Affairs",
+        "ar": "وزارة الشؤون الدينية"
+      },
+      "title": "Indonesian Translation - Ministry of Religious Affairs",
+      "version": "1.0.1",
+      "bytes": 1340946
+    },
+    {
+      "key": "turkish_rwwad",
+      "language": "tr",
+      "native": "Türkçe",
+      "name": {
+        "en": "Turkish",
+        "ar": "التركية"
+      },
+      "dir": "ltr",
+      "translator": {
+        "en": "Rowwad Translation Center",
+        "ar": "مركز رواد الترجمة"
+      },
+      "title": "Turkish Translation - Rowwad Translation Center",
+      "version": "1.0.4",
+      "bytes": 981915
+    },
+    {
+      "key": "german_bubenheim",
+      "language": "de",
+      "native": "Deutsch",
+      "name": {
+        "en": "German",
+        "ar": "الألمانية"
+      },
+      "dir": "ltr",
+      "translator": {
+        "en": "Frank Bubenheim",
+        "ar": "فرنك بوبنهايم"
+      },
+      "title": "German Translation - Frank Bubenheim",
+      "version": "1.1.4",
+      "bytes": 1044496
+    }
+  ]
+}

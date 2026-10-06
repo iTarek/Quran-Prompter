@@ -1,0 +1,41 @@
+{
+  "name": "ملقّن القرآن",
+  "short_name": "الملقّن",
+  "description": "ابدأ التلاوة من أي موضع في القرآن: يجد الملقّن مكانك، يلوّن كل كلمة تقرأها، ويمرّر الآيات معك.",
+  "lang": "ar",
+  "dir": "rtl",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#000000",
+  "theme_color": "#000000",
+  "categories": [
+    "education",
+    "books",
+    "lifestyle"
+  ],
+  "icons": [
+    {
+      "src": "/quran-prompter-icon-wave-192.png",
+      "type": "image/png",
+      "sizes": "192x192",
+      "purpose": "any"
+    },
+    {
+      "src": "/quran-prompter-icon-wave-512.png",
+      "type": "image/png",
+      "sizes": "512x512",
+      "purpose": "any"
+    }
+  ],
+  "screenshots": [
+    {
+      "src": "/og.png",
+      "type": "image/png",
+      "sizes": "1200x630",
+      "form_factor": "wide",
+      "label": "آيات المصحف وكل كلمة مقروءة ملوّنة"
+    }
+  ]
+}
